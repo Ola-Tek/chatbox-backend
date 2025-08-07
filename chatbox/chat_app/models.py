@@ -38,13 +38,13 @@ class IsOnline(models.Model):
     
     class Meta:
         """extra informatioin regarding the database table"""
-        db_table = 'Online Users'
+        db_table = 'online_users'
         indexes = [
             models.Index(fields=['user', 'current_room'])
         ]
         
     def __str__(self):
-        return f"{self.user.username} - onlline"
+        return f"{self.user.username} - online"
         
     def is_recently_active(self, minutes=5):
         """check if the user is recently active"""
@@ -65,7 +65,9 @@ class TypingIndicator(models.Model):
         constraints = [
             models.UniqueConstraint(fields=['user', 'conversation'], name='unique_typing_per_conversation')
         ]
-        indexes = models.Index(fields=['user','conversation'])
+        indexes = [
+            models.Index(fields=['user','conversation'])
+        ]
         db_table = 'typing_indicator'
         
         
@@ -85,16 +87,16 @@ class MessageDeliveryStatus(models.Model):
         ('delivered', 'Delivered'),
         ('read', 'Read'),
     ]
-    status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='sent')
+    delivery_status = models.CharField(max_length=255, choices=STATUS_CHOICES, default='sent')
     timestamp = models.DateTimeField(auto_now_add=True)
     
     class Meta:
         """extra information"""
-        db_table = "Message Delivery"
+        db_table = "message_delivery"
         constraints = [
             models.UniqueConstraint (fields=['message', 'user'], name='unique_message_user_status')
             ] #each user would have only a record of recorded message status
         #there would be no need to create another record of message read, when message sent has already being recorded, it would just update on the database 
        
     def __str__(self):
-        return f"message {self.message.id} - {self.status} - by {self.user.username}" 
+        return f"message {self.message.id} - {self.delivery_status} - by {self.user.username}" 
