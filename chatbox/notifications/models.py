@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from users_app.models import Conversation, Message
+from django.utils.translation import gettext_lazy as _
 # Create your models here.
 
 User = get_user_model()

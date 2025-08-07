@@ -29,7 +29,7 @@ class ChatRoom(models.Model):
     
 
 
-class IsOnline(models.Model):
+class OnlineUser(models.Model):
     """checks who is online, tracks users that is presently online"""
     user = models.OneToOneField(User, verbose_name=_("User"), on_delete=models.CASCADE, related_name='online_status')
     current_room = models.ForeignKey(ChatRoom, on_delete=models.CASCADE, null=True, blank=True)

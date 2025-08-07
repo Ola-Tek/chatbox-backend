@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import IsOnline, MessageDeliveryStatus, ChatRoom, TypingIndicator
+from .models import OnlineUser, MessageDeliveryStatus, ChatRoom, TypingIndicator
 
 # Register your models here.
 @admin.register(ChatRoom)
@@ -61,8 +61,8 @@ class CustomAdminDeliveryStatus(admin.ModelAdmin):
         }),
     ]
 
-@admin.register(IsOnline)    
-class CustomAdminIsOnline(admin.ModelAdmin):
+@admin.register(OnlineUser)    
+class CustomAdminOnlineUser(admin.ModelAdmin):
     """an custom admin structure for IsOnline"""
     list_display = ['user', 'current_room', 'socket_id', 'last_activity']
     list_filter = ['user', 'current_room']
