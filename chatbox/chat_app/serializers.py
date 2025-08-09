@@ -39,5 +39,8 @@ class OnlineUserSerializer(serializers.ModelSerializer):
     def get_is_recently_active(self, obj):
         """get the count of the online users"""
         return obj.is_recently_active()
+
+class IsTypingSerializer(Serializers.ModelSerializer):
+    """The serializer that shows information about typing"""
     
     
