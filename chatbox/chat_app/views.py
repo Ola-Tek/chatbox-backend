@@ -30,4 +30,9 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
                 'last_activity': timezone.now()
             }
         )
+        return Response({
+            'message': f"joined {chat_room.name} successfully!",
+            'chat room': ChatRoomSerializer(chat_room).data,
+            'created': created
+        })
         
