@@ -35,4 +35,40 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
             'chat room': ChatRoomSerializer(chat_room).data,
             'created': created
         })
+    
+    @action(detail=True, methods=['post'])    
+    def leave_chatroom(self, request, pk=None):
+        """on how to leave the chatroom"""
+        user = request.user
+        chat_room = self.get_object()
+        
+        try: 
+            requested_user = OnlineUser.objects.get(user=user, current_room=chat_room)
+            requested_user.current_room == None
+            requested_user.save()
+            
+            return Response ({'message': f'{user} has sucessfully left the group'})
+        except requested_user.DoesNotExist:
+            return Response({
+                'message': 'You are not in this room'
+            }, status=status.HTTP_400_BAD_REQUEST)
+        
+    @action(detail=True, methods=['get'])
+    def online_user(self, request, pk=None):
+        """get the total number of online users in a chat room"""
+        chat_room = self.get_object()
+        
+        online_user = OnlineUser.objects.filter(current_room=chat_room)
+        serializer = OnlineUserSerializer(online_user, many=True)
+        return Response({
+            serializer.data()
+        }, status=status.HTTP_200_OK)
+    
+    @action(detail=True, methods=['get'])    
+    def active_rooms(self, request, pk=None):
+        """get rooms where a current user is active"""
+        user = request.user
+        rooms = ChatRoom.objects.filter(user=user, is_active=True)
+        serializer = ChatRoomSerializer(rooms.name)
+        return Response({serializer.data()}, status=status.HTTP_200_OK)
         
