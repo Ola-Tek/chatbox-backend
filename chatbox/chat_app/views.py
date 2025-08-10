@@ -64,11 +64,15 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
             serializer.data()
         }, status=status.HTTP_200_OK)
     
-    @action(detail=True, methods=['get'])    
-    def active_rooms(self, request, pk=None):
+    @action(detail=False, methods=['get'])    
+    def active_rooms(self, request):
         """get rooms where a current user is active"""
         user = request.user
         rooms = ChatRoom.objects.filter(user=user, is_active=True)
-        serializer = ChatRoomSerializer(rooms.name)
-        return Response({serializer.data()}, status=status.HTTP_200_OK)
+        
+        if rooms.exists(): 
+            serializer = ChatRoomSerializer(rooms, many=True)
+            return Response(serializer.data, status=status.HTTP_200_OK)
+    
+        return Response({'message':'You are not active in any room'}, status=status.HTTP_204_NO_CONTENT)
         
