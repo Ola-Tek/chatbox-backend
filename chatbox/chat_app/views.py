@@ -5,6 +5,7 @@ from rest_framework.decorators import action
 from .models import *
 from django.utils import timezone
 from rest_framework import viewsets, permissions, status
+from datetime import timedelta, timezone
 
 # Create your views here.
 class ChatRoomViewSet(viewsets.ModelViewSet):
@@ -75,4 +76,37 @@ class ChatRoomViewSet(viewsets.ModelViewSet):
             return Response(serializer.data, status=status.HTTP_200_OK)
     
         return Response({'message':'You are not active in any room'}, status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['get'])
+    def my_room(self, request):
+        """get the room where an active user is"""
+        user = request.user
+        online_user = OnlineUser.objects.get(user=user)
+        
+        try:
+            
+            if online_user.current_room:
+                room_serializer = ChatRoomSerializer(online_user.current_room)
+                return Response (room_serializer.data)
+            else:
+                return Response({'message': 'Not in my room!'})
+            
+        except online_user.DoesNotExist:
+            return Response ({'message': 'the user is not onine in this room'})
+        
+class OnlineUserViewSet(viewsets.ModelViewSet):
+    """the viewset that manages online users"""
+    queryset = OnlineUser.objects.all()
+    serializer_class = OnlineUserSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    
+    
+    def get_queryset(self):
+        """get the query set of all online users"""
+        return OnlineUser.objects.filter(last_activity__gte=timezone.now() - timedelta(minutes=5))
+    
+    @action(detail=False, methods=['post'])
+    def update_activity(self, request):
+        """update the queryset"""
+        
         
