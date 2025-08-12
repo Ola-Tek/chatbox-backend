@@ -102,11 +102,74 @@ class OnlineUserViewSet(viewsets.ModelViewSet):
     
     
     def get_queryset(self):
-        """get the query set of all online users"""
+        """get the query set of all online users in the past five minutes"""
         return OnlineUser.objects.filter(last_activity__gte=timezone.now() - timedelta(minutes=5))
     
     @action(detail=False, methods=['post'])
     def update_activity(self, request):
         """update the queryset"""
+        #check the last activity
+        #if the last activity is greater than five minutes
+        #then check if the user is online/active
+        #if he is then update it to the current time frame
+        online_user, created = OnlineUser.objects.filter(
+            user=request.user,
+            defaults={'last_activity': timezone.now()}
+        )
+        serializer = self.get_serializer(online_user)
+        return Response(serializer.data)
+    
+    @action(detail=False, methods='get')
+    def get_conversation_users(self, request):
+        """get online users for a specific conversation"""
+        #thinking frame: get the online users by filtering the conversation out
+        #we are supposed to attach a conversation id to online user
+        #we had to get the conversation id from the request
+        conversation_id = request.query_params.get('conversation_id')
+        if conversation_id:
+            conversation_user = self.get_queryset().filter(current_room__conversation_id=conversation_id)
+            serializer = self.get_serializer(conversation_user, many=True)
+            return Response({'online users': serializer.data,
+                             'conversation id': conversation_id,
+                             'no of online users': len(serializer.data)}, status=status.HTTP_200_OK)
+        return Response({'error': 'there must be a conversation id' }, status=status.HTTP_204_NO_CONTENT)
+    
+    @action(detail=False, methods=['post'])
+    def set_offline(self, request):
+        """to set an online user to be offline"""
+        #thinking frame: so since online user represent the user online, deleting the user online means it would be offline
+        #hope it won't cause a bottle neck in our database when we always want to delete a user when they are offline
+        #we first of all have to get the user that is making the request, the person is an online user
+        try:
+            online_user = OnlineUser.objects.get(user=request.user)
+            online_user.delete()
+            return Response({'message': 'user has been set to offline'}, status=status.HTTP_200_OK)
+        except online_user.DoesNotExist:
+            return Response({'message': 'User was not online'})
         
+class TypingIndicatorViewSet(viewsets.ModelViewSet):
+    """a logic that handles the typing indicator"""
+    queryset = TypingIndicator.objects.all()
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = TypingIndicatorSerializer
+    
+    def get_queryset(self):
+        """returns the typing indicator for a user in a particular conversation"""
+        conversation_id = self.request.query_params.get('conversation_id')
+        if conversation_id:
+            return TypingIndicator.objects.filter(is_typing=True, conversation_id=conversation_id).exclude(user=self.request.user)
+        return TypingIndicator.objects.none() #returns an empty queryset
+    
+    def perform_create(self, serializer):
+        """it's usually used when you need it to carry out a task before saving,
+        in this case, you are setting the user to be a requested user"""
+        #why do we need to set the user before we create a typing indicator instance?
+        #because we want to make sure that the typing instance created is tied to the requested user,
+        #and we can only get it by 
+        serializer.save(user=self.request.user)
+        
+    def start_typing(self):
+        """start typing in a conversation"""
+        #in order to incorportate start typing logic, you have to get the conversation id from the request
+        #not just conversation_id, get conversation id from 
         
