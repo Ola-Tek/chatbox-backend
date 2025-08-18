@@ -167,9 +167,95 @@ class TypingIndicatorViewSet(viewsets.ModelViewSet):
         #because we want to make sure that the typing instance created is tied to the requested user,
         #and we can only get it by 
         serializer.save(user=self.request.user)
-        
-    def start_typing(self):
+    @action(detail=False, methods=['post'])    
+    def start_typing(self, request):
         """start typing in a conversation"""
         #in order to incorportate start typing logic, you have to get the conversation id from the request
-        #not just conversation_id, get conversation id from 
+        #not just conversation_id, get the user
+        serializer = TypingIndicatorSerializer(data=request.data)
+        if serializer.is_valid():
+            conversation_id = serializer.validated_data('conversation_id')
+            typing_indicator, created = TypingIndicator.objects.update_or_create(
+                conversation_id=conversation_id,
+                user=request.user,
+                defaults={'is_typing': True}
+            )
+            response_serializer = TypingIndicatorSerializer(typing_indicator)
+            return Response(response_serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_200_OK)
+    
+    
+    def stop_typing(self, request):
+        """stop typping in a conversation"""
+        #we have to get the conversation id  from the serialized data
+        serializer = TypingIndicatorSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            conversation_id = serializer.validated_data('conversation_id')
+            TypingIndicator.objects.filter(
+                conversation_id=conversation_id,
+                user=request.user,
+                defaults={'is_typing': False}
+            ).delete()
+            return Response({'message': 'stopped typing'}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=True, methods=['get'])
+    def who_is_typing(self, request):
+        """get who is typing in a conversation"""
+        #get the conversation
+        #get the user
+        conversation_id = self.request.query_params.get('conversation_id')
+        if not conversation_id:
+            """we want to handle and make sure that there is a conversation before we can be able
+            to find who is typing"""
+            return Response({'error': 'conversation id required'}, status=status.HTTP_400_BAD_REQUEST)
+        typing_users = TypingIndicator.objects.filter(
+            conversation_id=conversation_id,
+            is_typing=True,
+        ).exclude(user=request.user)
+        
+        serializer = TypingIndicator(typing_users, many=True)
+        return Response({'conversation_id': conversation_id,
+                         'who_is_typing': serializer.data,
+                         'count': len(serializer.data)}, status=status.HTTP_200_OK)
+        
+class MessageDeliveryStatusViewSet(viewsets.ModelViewSet):
+    """manages the functional viewset of message delivery"""
+    queryset = MessageDeliveryStatus.objects.all()
+    serializer_class = MessageDeliveryStatusSerializer
+    permission_classes = permissions.IsAuthenticated
+    
+    def get_queryset(self):
+        """return delivery status for a particular message"""
+        message_id = self.request.query_params.get('message_id')
+        if message_id:
+            return MessageDeliveryStatus.objects.filter(message_id=message_id)
+        return MessageDeliveryStatus.objects.none()
+    
+    @action(detail=False, methods=['post'])
+    def mark_delivered(self, request):
+        """marks a particular message as read"""
+        serializer = BulkMessageStatusSerializer(data=request.data)
+        
+        
+        if serializer.is_valid():
+            message_ids = serializer.validated_data['message_id']
+            
+            #tracks created instances, for easy debug
+            updated_count = 0
+            
+            for message_id in message_ids:
+                updated_status, created = MessageDeliveryStatus.objects.update_or_create(
+                    message_id=message_id,
+                    user=request.user,
+                    defaults={'delivery_status': 'delivered'}
+                )
+                if created or updated_status.delivery_status != 'delivered':
+                    updated_count += 1
+                return Response({'message': f'{updated_count} messages were delivered',
+                                 'updated_count': updated_count})
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+                
+            
         
