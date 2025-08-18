@@ -294,18 +294,20 @@ class MessageDeliveryStatusViewSet(viewsets.ModelViewSet):
         #you want to return the serialized data, so you have to serialize the particular message you have filtered
         message_id = request.query_params.get('message_id')
     
-        if message_id:
-            status_message = MessageDeliveryStatus.objects.filter(
-                user=request.user,
-                message_id=message_id,   
-            )
-            serializer = MessageDeliveryStatusSerializer(status_message, many=True)
-            return Response({'message': serializer.data}, status=status.HTTP_200_OK)
+        if not message_id:
+            return Response({'error': 'message_id is required'}, status=status.HTTP_400_BAD_REQUEST)
         
+        status_message = MessageDeliveryStatus.objects.filter(
+            user=request.user,
+            message_id=message_id,   
+        )
         if not status_message.exists():
-            return Response({'message': 'this message_id do not have a delivery status'}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({'message': 'this message_id do not have a delivery status'}, status=status.HTTP_404_NOT_FOUND)
         
-        return Response({'error': 'message_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+        serializer = MessageDeliveryStatusSerializer(status_message, many=True)
+        return Response({'message': serializer.data}, status=status.HTTP_200_OK)
+        
+        
             
         
         
