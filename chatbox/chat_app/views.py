@@ -167,6 +167,7 @@ class TypingIndicatorViewSet(viewsets.ModelViewSet):
         #because we want to make sure that the typing instance created is tied to the requested user,
         #and we can only get it by 
         serializer.save(user=self.request.user)
+    
     @action(detail=False, methods=['post'])    
     def start_typing(self, request):
         """start typing in a conversation"""
@@ -184,7 +185,7 @@ class TypingIndicatorViewSet(viewsets.ModelViewSet):
             return Response(response_serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_200_OK)
     
-    
+    @action(detail=False, methods=['post'])
     def stop_typing(self, request):
         """stop typping in a conversation"""
         #we have to get the conversation id  from the serialized data
