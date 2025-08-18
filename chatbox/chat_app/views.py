@@ -253,9 +253,41 @@ class MessageDeliveryStatusViewSet(viewsets.ModelViewSet):
                 )
                 if created or updated_status.delivery_status != 'delivered':
                     updated_count += 1
-                return Response({'message': f'{updated_count} messages were delivered',
+            return Response({'message': f'{updated_count} messages were delivered',
                                  'updated_count': updated_count})
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+    
+    @action(detail=False, methods=['post'])
+    def mark_read(self, request):
+        """marks messages as read"""
+        #first of all have to get the serialized request data, which serializer? - use bulk serializer
+        #check if the serialized data is valid
+        #supposed to get the message_id from the serialized data
+        #use the validated data to create or update the user, message_id and status
+        serializer = BulkMessageStatusSerializer(data=request.data)
+        
+        if serializer.is_valid():
+            """get the message from the serialized data"""
+            message_ids = serializer.validated_data['message_id']
+            updated_count = 0 #to track the number of messages that has probably been created and not on read mode
+            
+            for message_id in message_ids:
+                updated_status, created = MessageDeliveryStatus.objects.update_or_create(
+                    user=request.user,
+                    message_id=message_id,
+                    defaults={'delivery_status': 'read'},
+                )
+                
+                #checks if created or the updated status is not on read and increments
+                if created or updated_status.delivery_status != 'read':
+                    updated_count += 1
+            return Response({'message': f'{updated_count} messages has been read',
+                             'updated_count': updated_count}, status=status.HTTP_200_OK)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+            
+            
+        
+        
                 
             
         
