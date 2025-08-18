@@ -284,7 +284,28 @@ class MessageDeliveryStatusViewSet(viewsets.ModelViewSet):
             return Response({'message': f'{updated_count} messages has been read',
                              'updated_count': updated_count}, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-            
+    
+    @action(detail=False, methods=['get'])
+    def message_status(self,request):
+        """get the delivery status for a particular message"""
+        #you have to get the particular message_id from the request
+        #confirm that there is a message_id, if not return an error message for geting the message id
+        # then filter the message, from the options for user, and status to provide the particular delivery status
+        #you want to return the serialized data, so you have to serialize the particular message you have filtered
+        message_id = request.query_params.get('message_id')
+    
+        if message_id:
+            status_message = MessageDeliveryStatus.objects.filter(
+                user=request.user,
+                message_id=message_id,   
+            )
+            serializer = MessageDeliveryStatusSerializer(status_message, many=True)
+            return Response({'message': serializer.data}, status=status.HTTP_200_OK)
+        
+        if not status_message.exists():
+            return Response({'message': 'this message_id do not have a delivery status'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        return Response({'error': 'message_id is required'}, status=status.HTTP_400_BAD_REQUEST)
             
         
         
