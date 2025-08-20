@@ -20,9 +20,15 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     
+    #authentication urls
+    path('auth/', include('users_app.authentication')),
+    
     #for users_app
     path('api/users', include('users_app.urls')),
     
     #for notifications
     path('api/notifications', include('notifications.urls')),
+    
+    #for chat app
+    path('api/chat', include('chat_app.urls')),
 ]
