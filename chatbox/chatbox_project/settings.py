@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "rest_framework_simplejwt.token_blacklist",
+    "channels",
 ]
 
 # Adding a custom user  to the settings to tell django to use my custom user
@@ -106,16 +107,27 @@ WSGI_APPLICATION = "chatbox.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": config ("DB_NAME", default="chatbox_db"),
-        "USER": config ("DB_USER", default="User_1"),
-        "PASSWORD": config ("DB_PASSWORD"),
+        "NAME": config ("POSTGRES_DB"),
+        "USER": config ("POSTGRES_USER"),
+        "PASSWORD": config ("POSTGRES_PASSWORD"),
         "HOST": config ("DB_HOST", default="localhost"),
         "PORT": config ("DB_PORT", default="5432"),
-        "OPTIONS": {
-            "charset": "UTF8",
-        },
         "CONN_MAX_AGE": 600, #connection pool, allows the database connection to be resued in the space of 600seconds
     }
+}
+
+#channels configuration for redis, it helps django communicate with redis
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [{
+                "host": config("REDIS_HOST", default="redis"),
+                "port": config("REDIS_PORT", cast=int, default=6379),
+                "password": config("REDIS_PASSWORD", default=None),
+            }],
+        },
+    },
 }
 
 
