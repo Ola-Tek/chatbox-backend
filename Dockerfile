@@ -9,11 +9,11 @@ ENV PYTHONUNBUFFERED 1
 WORKDIR /app
 
 #copy and install all requirements
-copy requirements.txt .
+COPY requirements.txt .
 RUN pip install --upgrade pip && pip install -r requirements.txt
 
 #copy the source codes into the working directory
-copy . .  
+COPY . .  
 
 #Telling docker the command to run
-CMD [ "python", "manage.py", "runserver", "0.0.0.0:8000" ]
+CMD [ "daphne", "-b", "0.0.0.0", "-p", "8000", "chatbox.asgi:application" ]
