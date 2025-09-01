@@ -87,10 +87,10 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
             if message_data_type == 'chat_message': #telling django to check the data type from the frontend side
                 await self.handle_chat_message(cleaned_data)
-            elif message_data_type == 'typing_start':
-                await self.handle_typing_start() #the handling function cant take in a data cuz it handles when a user is typing, so no data inputed yet
-            elif message_data_type == 'typing_stop':
-                await self.handle_typing_stop()
+            elif message_data_type == 'start_typing':
+                await self.handle_start_typing() #the handling function cant take in a data cuz it handles when a user is typing, so no data inputed yet
+            elif message_data_type == 'stop_typing':
+                await self.handle_stop_typing()
             elif message_data_type == 'message_read':
                 await self.handle_message_read(cleaned_data)
         except json.JSONDecodeError:
@@ -109,8 +109,122 @@ class ChatConsumer(AsyncWebsocketConsumer):
         message_content = data.get('message', '')
         message_type = data.get('message_type', 'text')
         
-        if not message_content.strip(): #it tells the 
+        if not message_content.strip(): #strip removes all trailing white spaces, so if after removing all white spaces you have a message content => "". Then it would fail silently, cuz you don't want to send an empty message of white spaces
             return
             
+        #we have to save  the new message after confirming the message_type
+        #message is an instance of Message model cuz save_message returns a created row of message in the database
+        message = await self.save_message(message_content, message_type)
+        
+        #after message has been saved we want to then broadcast the message
+        if message: 
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type' : 'chat_message',
+                    'message_id' : message.id,
+                    'message_type' : message_type,
+                    'message' : message_content,
+                    'user_id' : self.user.id,
+                    'username' : self.user.username,
+                    'avatar' : self.user.avatar.url if self.user.avatar else None,
+                    'time_stamp' : message.time_stamp.isoformat(), #this refers to the timestamp designed in your model, isformat changes datetime field to a stringify field, cuz datetime field can not be passed in the websocket
+                }
+            )
+            
+    async def handle_start_typing(self):
+        """Handle start typing"""
+        #-TRAIN OF THOUGHTS
+        #1. We have to show the user who is about sending a message after a ws connection has been initialized
+        #2. set is_typing to be True
+        #3. how can we get is_typing - There should be a typing indicator instance that can access is typing and set it to be True
+        #4. after setting the typing indicator to be true we have to broadcast it to users on the same broadcast channel - channel_name/room_group_name
+        
+        await self.set_typing_indicator(True) #where set_typing_indicator will be an instance of typing_indicator which will either be created or updated
+        
+        #broadcast to others in the room
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type' : 'typing_indicator',
+                'user_id' : self.user.id,
+                'username' : self.user.username,
+                'is_typing' : True, 
+            }
+        )
+        
+    async def handle_stop_typing(self):
+        """handles when the client stop typing"""
+        #-TRAIN OF THOUGHTS
+        #1. We have to set typing indicator to be false
+        #2. access is_typing to be false
+        #3. broadcast to others that you stopped typing
+        
+        await self.set_typing_indicator(False)
+        
+        #notify others that you stopped typing
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type' : 'typing_indicator',
+                'user_id' : self.user.id,
+                'username' : self.user.username,
+                'is_typing' : False,
+            }
+        )
+        
+    async def handle_message_read(self, data):
+        """handles all read messages status"""
+        #-TRAIN OF THOUGHTS
+        #1. set status of read message to be true - it could be another asynchronous function
+        #2. you have to get the message_id
+        #3. broadcast or notify that it has been read
+        
+        message_id = await data.get('message_id')
+        
+        if message_id:
+            await self.mark_message_read(message_id)
+            
+        #notify that the message has been read
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                'type' : 'message_read',
+                'message_id' : message_id,
+                'read_by_user_id' : self.user.id,
+                'read_by_username' : self.user.username,
+            }
+        )
+        
+    #EVENT HANDLERS FOR THE TYPE, IT TELLS DJANGO WHAT TO DO WHEN IT COMES ACROSS A PARTICULAR TYPE
+    async def chat_message(self, event):
+        """send chat message to websocket"""
+        #1. events represents an instance of a message sent over a connection
+        #2. Purpose of this is to ensure when a user sends a message, he doesn't get the same message back
+        
+        if event['user_id'] != self.user.id:
+            #specifies that the user who sent the message is not the same as the user who is receiving it
+            #then it would broadcast it
+            await self.send(text_data=json.dumps({
+               'type' : 'chat_message',
+               'message_id' : event['message_id'],
+               'message' : event['message'],
+               'message_type' : event['message_type'],
+               'user_id' : event['user_id'],
+               'username' : event['username'],
+               'avartar' : event['avartar'],
+               'timestamp' : event['timestamp'], 
+            }))
+    async def typing_indicator(self, event):
+        """send typing indicator to websocket"""
+        #we dont want to send typing indicator back to the sender, so we have to filter that out
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type' : 'typing_indicator',
+                'user_id' : event['user_id'],
+                'username' : event['username'],
+                'is_typing' : event['is_typing']
+            }))
+        
         
         
