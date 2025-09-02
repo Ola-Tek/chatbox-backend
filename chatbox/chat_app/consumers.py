@@ -22,7 +22,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         if self.user.is_anonymous:
             await self.close()
             return
-        #needs to check for if the conversation can be accessed by the authenticated user
+        #needs to check for if the user is part of the conversation
         has_access = await self.check_conversation_access()
         if not has_access:
             await self.close()
@@ -231,13 +231,13 @@ class ChatConsumer(AsyncWebsocketConsumer):
         #1. we have to make sure that the user whose message has been read is not also receiving his own read message status
         #2. we also have to change the status to show that it has been read, especially if its defaulted at false
         #3. there is a delivery status in message, so we access it by creating an instance of it
-        if event['user_id'] != self.user.id:
-            await self.send(text_data=json.dumps({
-                'type' : 'message_read',
-                'message_id' : event['message_id'],
-                'read_by_user_id' : event['read_by_user_id'],
-                'read_by_username' : event['read_by_username'],
-            }))
+        
+        await self.send(text_data=json.dumps({
+            'type' : 'message_read',
+            'message_id' : event['message_id'],
+            'read_by_user_id' : event['read_by_user_id'],
+            'read_by_username' : event['read_by_username'],
+        }))
             
     async def user_joined(self, event):
         """send user joined notification across the websocket"""
@@ -256,3 +256,17 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'user_id' : event['user_id'],
                 'username' : event['username'],
             }))
+            
+    #DATABASE OPERATIONS, SINCE IT'S AN ASYNCHRONOUS OPERATION WE WOULD NEED TO WRAP IT IN A DATA_SYNC_TO_ASYNC DECORATOR
+    @database_sync_to_async
+    async def check_conversation_access(self):
+        """check if the user has access to the conversation"""
+        #1.we have to get the conversation id
+        #2. we have to also check if user is in the same room as where the conversation was made
+        #3. to get the conversation, we would use the get function to query the database
+        try:
+            conversation = Conversation.objects.get(id=self.conversation_id)
+            return self.user in conversation.participants.all()
+        except Conversation.DoesNotExist:
+            return False
+        
