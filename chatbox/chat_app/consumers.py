@@ -198,7 +198,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
         
     #EVENT HANDLERS FOR THE TYPE, IT TELLS DJANGO WHAT TO DO WHEN IT COMES ACROSS A PARTICULAR TYPE
     async def chat_message(self, event):
-        """send chat message to websocket"""
+        """send chat message to each personal websocket connection"""
         #1. events represents an instance of a message sent over a connection
         #2. Purpose of this is to ensure when a user sends a message, he doesn't get the same message back
         
@@ -225,6 +225,34 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 'username' : event['username'],
                 'is_typing' : event['is_typing']
             }))
-        
-        
-        
+            
+    async def message_read(self, event):
+        """send a message read status to the websocket"""
+        #1. we have to make sure that the user whose message has been read is not also receiving his own read message status
+        #2. we also have to change the status to show that it has been read, especially if its defaulted at false
+        #3. there is a delivery status in message, so we access it by creating an instance of it
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type' : 'message_read',
+                'message_id' : event['message_id'],
+                'read_by_user_id' : event['read_by_user_id'],
+                'read_by_username' : event['read_by_username'],
+            }))
+            
+    async def user_joined(self, event):
+        """send user joined notification across the websocket"""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type' : 'user_joined',
+                'user_id' : event['user_id'],
+                'username' : event['username'],
+            }))
+            
+    async def user_left(self, event):
+        """send the user that left over the websocket"""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type' : 'user_left',
+                'user_id' : event['user_id'],
+                'username' : event['username'],
+            }))
