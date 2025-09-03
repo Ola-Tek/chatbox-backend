@@ -271,9 +271,18 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return False
         
     @database_sync_to_async
-    async def save_message(self, message, message_type='text'):
+    async def save_message(self, content, message_types='text'):
         """save the message on the database"""
-        conversation = Conversation.objects.get(id=self.conversation_id)
-        message = Message.objects.update_or_create
+        try:
+            conversation = Conversation.objects.get(id=self.conversation_id)
+            message = Message.objects.create(
+                sender=self.user,
+                conversation=conversation,
+                content=content,
+                message_types=message_types,    
+            )
+            return message
+        except Conversation.DoesNotExist:
+            return None
     
         
