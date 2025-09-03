@@ -2,7 +2,7 @@ import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
-from .models import TypingIndicator, ChatRoom, OnlineUser
+from .models import TypingIndicator, ChatRoom, MessageDeliveryStatus, OnlineUser
 from users_app.models import Message, Conversation
 from django.utils import timezone
 
@@ -322,4 +322,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
             user=self.user,
             conversation_id=self.conversation_id
         ).delete()
+        
+    @database_sync_to_async
+    def mark_message_read(self, message_id):
+        """mark the message as read"""
+        #we have to get the message id
+        MessageDeliveryStatus.objects.update_or_create(
+            user=self.user,
+            message_id=message_id,
+            defaults={'delivery_status' : 'read'}
+        )
         
