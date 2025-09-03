@@ -4,6 +4,7 @@ from channels.db import database_sync_to_async
 from django.contrib.auth import get_user_model
 from .models import TypingIndicator, ChatRoom, OnlineUser
 from users_app.models import Message, Conversation
+from django.utils import timezone
 
 User = get_user_model()
 
@@ -284,5 +285,41 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return message
         except Conversation.DoesNotExist:
             return None
+        
+    @database_sync_to_async
+    def set_user_online(self):
+        """set user as online"""
+        OnlineUser.objects.update_or_create(
+            user=self.user,
+            defaults={'last_activity' : timezone.now()}
+        )
     
+    @database_sync_to_async    
+    def set_user_offline(self):
+        """set the user to be offline"""
+        OnlineUser.objects.filter(user=self.user).delete()
+        
+    
+    @database_sync_to_async
+    def set_typing_indicator(self, is_typing):
+        """set the typing indicator"""
+        if is_typing:
+            TypingIndicator.objects.update_or_create(
+                user=self.user,
+                conversation_id=self.conversation_id,
+                defaults={'is_typing' : True},
+            )
+        else:
+            TypingIndicator.objects.filter(
+                user=self.user,
+                conversation_id=self.conversation_id
+            ).delete()
+            
+    @database_sync_to_async
+    def stop_typing_indicator(self, is_typing):
+        """stop the typing indicator"""
+        TypingIndicator.objects.filter(
+            user=self.user,
+            conversation_id=self.conversation_id
+        ).delete()
         
