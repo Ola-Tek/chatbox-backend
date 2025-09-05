@@ -108,14 +108,14 @@ class ChatConsumer(AsyncWebsocketConsumer):
         #also get the message type to be chat_message
         #if the data is not in db, it will save the message to the db
         message_content = data.get('message', '')
-        message_type = data.get('message_type', 'text')
+        message_types = data.get('message_types', 'text')
         
         if not message_content.strip(): #strip removes all trailing white spaces, so if after removing all white spaces you have a message content => "". Then it would fail silently, cuz you don't want to send an empty message of white spaces
             return
             
         #we have to save  the new message after confirming the message_type
         #message is an instance of Message model cuz save_message returns a created row of message in the database
-        message = await self.save_message(message_content, message_type)
+        message = await self.save_message(message_content, message_types)
         
         #after message has been saved we want to then broadcast the message
         if message: 
@@ -124,7 +124,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 {
                     'type' : 'chat_message',
                     'message_id' : message.id,
-                    'message_type' : message_type,
+                    'message_types' : message_types,
                     'message' : message_content,
                     'user_id' : self.user.id,
                     'username' : self.user.username,
@@ -333,3 +333,102 @@ class ChatConsumer(AsyncWebsocketConsumer):
             defaults={'delivery_status' : 'read'}
         )
         
+        
+class NotificationConsumer(AsyncWebsocketConsumer):
+    """handles the notification logic for websocket"""
+    async def connect(self):
+        """this function is called each time notification consumer"""
+        self.user_id = self.scope['url_route']['kwargs']['user_id']
+        self.user = self.scope['user']
+        
+        #check if the user is an authenticated user
+        if self.user.is_anonymous or str(self.user.id) != self.user_id:
+            await self.close()
+            return
+        
+        self.notification_group_name = f'notifications_{self.user_id}' #get the group name where users in the same notification group can get
+        
+        #adding the connection to the groupname, the channel name is the connection of the user
+        await self.channel_layer.group_add(
+            self.notification_group_name,
+            self.channel_name
+        )
+        await self.accept()
+        
+    async def disconnect(self, code):
+        """disconnect the connection"""
+        #1. we have to close connection and also discard or delete the group name and connection(channel name)
+        await self.channel_layer.group_discard(
+            self.notification_group_name,
+            self.channel_name
+        )
+        
+    async def notification_message(self, event):
+        """send notification to websocket"""
+        #event represent an instance of the notification that the client has sent
+        #THOUGTH PROCESS - The information  
+        #The group name and channel/connection is needed
+        #the group_send for the connection
+        #we have to get the message id, and render it in json format
+        await self.send(text_data=json.dumps({
+            'type' : 'notification',
+            'notification_id' : event['notification_id'],
+            'title' : event['title'],
+            'message' : event['message'],
+            'notification_type' : event['notification_type'],
+            'timestamp' : event['timestamp']
+        }))
+        
+class OnlineStatusConsumer(AsyncWebsocketConsumer):
+    """a websocket consumer that handles online status, it tracks the online status of 
+    users"""
+    #we have to call the connect funtion - 
+    async def connect(self):
+        """websocket consumer for tracking online status"""
+        self.user = self.scope['user']
+        
+        if self.user.is_anonymous:
+            await self.close()
+            return
+        
+        self.online_group_name = 'online_users'
+        
+        #join online_users group
+        await self.channel_layer.group_add(
+            self.online_group_name,
+            self.channel_name
+        )
+        
+        #set user online
+        await self.set_user_online()
+        
+        await self.accept()
+        
+        #notify others that user is online
+        await self.channel_layer.group_send(
+            self.online_group_name,
+            {
+                'type' : 'user_online',
+                'user_id' : self.user.id,
+                'username' : self.user.username,
+                
+            }
+        )
+        
+    async def disconnect(self, close_code):
+        """disconnect the user"""
+        
+        #set user to be offline
+        await self.set_user_offline()
+        
+        #notify users that has been offline
+        await self.channel_layer.group_send(
+            self.online_group_name,
+            {
+                'type' : 'user_offline',
+                'user_id' : self.user.id,
+                'username' :self.user.username,
+            }
+        )
+        
+        #leave the group name
