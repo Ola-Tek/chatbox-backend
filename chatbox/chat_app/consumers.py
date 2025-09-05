@@ -431,4 +431,17 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
             }
         )
         
-        #leave the group name
+        #leave the group 
+        await self.channel_layer.group_discard(
+            self.online_group_name,
+            self.channel_name
+        )
+        
+    async def user_online(self, event):
+        """send user online status to websocket"""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dumps({
+                'type' : 'user_online',
+                'user_id' : event['user_id'],
+                'username' : event['username']
+            }))
