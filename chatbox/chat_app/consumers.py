@@ -445,3 +445,12 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
                 'user_id' : event['user_id'],
                 'username' : event['username']
             }))
+            
+    async def user_offline(self, event):
+        """sends to the websocket connection that the user is offline"""
+        if event['user_id'] != self.user.id:
+            await self.send(text_data=json.dump({
+                'type' : 'user_offline',
+                'user_id' : event['user_id'],
+                'username' : event['username']
+            }))
