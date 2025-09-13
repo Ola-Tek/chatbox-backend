@@ -47,7 +47,7 @@ def register(request):
         }, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-@api_view({'POST'})
+@api_view(['POST'])
 def logout(request):
     """ viewset to logout """
     try:
@@ -64,7 +64,7 @@ def logout(request):
         print(f"Token Error: {e}") #this prints the original error caught by e and print it on the terminal
         return Response({"error": "Invalid Token"}, status=status.HTTP_400_BAD_REQUEST)
     
-@api_view({'GET'})
+@api_view(['GET'])
 def view_profile(request):
     "the view function that shows, get the current user profile"
     serializer = UserProfileSerializer(request.user)
