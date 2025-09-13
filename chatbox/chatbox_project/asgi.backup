@@ -1,0 +1,59 @@
+"""
+ASGI config for chatbox project.
+
+It exposes the ASGI callable as a module-level variable named ``application``.
+
+For more information on this file, see
+https://docs.djangoproject.com/en/4.2/howto/deployment/asgi/
+"""
+
+import os
+
+from django.core.asgi import get_asgi_application
+from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.auth import AuthMiddlewareStack
+from channels.security.websocket import AllowedHostsOriginValidator
+
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "chatbox_project.settings")
+
+#initialize the asgi application to ensure apps are loaded before module
+django_asgi_app = get_asgi_application()
+
+#import websocket routing directly to avid premature model loading
+from chat_app.routing import websocket_urlpatterns
+  12
+  11   from django.core.asgi import get_asgi_application
+  10   from channels.routing import ProtocolTypeRouter, URLRouter
+   9   from channels.auth import AuthMiddlewareStack
+   8   from channels.security.websocket import AllowedHostsOriginValidator
+   7
+   6 ▎ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "chatbox_project.settings")
+   5 ▎
+   4 ▎ #initialize the asgi application to ensure apps are loaded before module
+   3 ▎ django_asgi_app = get_asgi_application()
+   2 ▎
+   1 ▎ #import websocket routing directly to avid premature model loading
+  23 ▎ from chat_app.routing import websocket_urlpatterns
+   1
+   2   #application = get_asgi_application()
+  3   application = AllowedHostsOriginValidator(
+  4   ▏   ProtocolTypeRouter({
+   5 ▎ ▏   ▏   "http": django_asgi_app,
+  6   ▏   ▏   "websocket": AuthMiddlewareStack(
+   7   ▏   ▏   ▏   URLRouter(
+  8 ▎ ▏   ▏   ▏   ▏   websocket_urlpatterns
+   9   ▏   ▏   ▏   )
+  10   ▏   ▏   ),
+    main   󰌠 python     6  3  1 ng import websocket_urlpatterns
+
+#application = get_asgi_application()
+application = AllowedHostsOriginValidator(
+    ProtocolTypeRouter({
+        "http": django_asgi_app,
+        "websocket": AuthMiddlewareStack(
+            URLRouter(
+                websocket_urlpatterns
+            )
+        ),
+    })
+)

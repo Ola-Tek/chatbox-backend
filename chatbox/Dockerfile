@@ -16,4 +16,4 @@ RUN pip install --upgrade pip && pip install -r requirements.txt
 COPY . .  
 
 #Telling docker the command to run
-CMD [ "daphne", "-b", "0.0.0.0", "-p", "8000", "chatbox.asgi:application" ]
+CMD [ "daphne", "-b", "0.0.0.0", "-p", "8000", "chatbox_project.asgi:application" ]

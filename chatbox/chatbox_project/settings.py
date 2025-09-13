@@ -48,6 +48,9 @@ INSTALLED_APPS = [
     "channels",
 ]
 
+#points to asgi configuration
+ASGI_APPLICATION = 'chatbox_project.asgi.application'
+
 # Adding a custom user  to the settings to tell django to use my custom user
 AUTH_USER_MODEL = 'users_app.User'
 

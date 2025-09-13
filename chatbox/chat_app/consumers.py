@@ -260,7 +260,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             
     #DATABASE OPERATIONS, SINCE IT'S AN ASYNCHRONOUS OPERATION WE WOULD NEED TO WRAP IT IN A DATA_SYNC_TO_ASYNC DECORATOR
     @database_sync_to_async
-    async def check_conversation_access(self):
+    def check_conversation_access(self):
         """check if the user has access to the conversation"""
         #1.we have to get the conversation id
         #2. we have to also check if user is in the same room as where the conversation was made
@@ -272,7 +272,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return False
         
     @database_sync_to_async
-    async def save_message(self, content, message_types='text'):
+    def save_message(self, content, message_types='text'):
         """save the message on the database"""
         try:
             conversation = Conversation.objects.get(id=self.conversation_id)
