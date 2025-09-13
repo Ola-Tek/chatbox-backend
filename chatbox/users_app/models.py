@@ -15,6 +15,8 @@ class User(AbstractUser):
     is_online =  models.BooleanField(default=False)
     last_seen = models.DateTimeField(default=timezone.now)
     status_message = models.CharField(max_length=200, blank=True)
+    email = models.EmailField(unique=True)
+    username = models.CharField(max_length=200, unique=True)
     
     #adding privacy settings
     show_onlinestatus = models.BooleanField(default=True)
@@ -106,7 +108,7 @@ class Message(models.Model):
     content = models.TextField()
     time_stamp = models.DateTimeField(auto_now_add=True)
     message_types = models.CharField(max_length=255, choices=MESSAGE_TYPES, default='text')
-    file_attachement = models.FileField(upload_to='/message_files', blank=True, null=True)
+    file_attachement = models.FileField(upload_to='message_files/', blank=True, null=True)
     
     #message status
     is_delivered = models.BooleanField(default=False)

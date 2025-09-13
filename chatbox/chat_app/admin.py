@@ -25,7 +25,7 @@ class CustomAdminTypingIndicator(admin.ModelAdmin):
     """the admin structure for a typing indicator model defined in the models.py"""
     list_display = ['user', 'is_typing', 'conversation']
     list_filter = ['is_typing', 'user']
-    search_fields = ['user__username', 'conversation__title']
+    search_fields = ['user', 'conversation']
     raw_id_fields = ['user', 'conversation']
     readonly_fields = ['is_typing', 'started_typing']
     
@@ -67,7 +67,7 @@ class CustomAdminOnlineUser(admin.ModelAdmin):
     list_display = ['user', 'current_room', 'socket_id', 'last_activity']
     list_filter = ['user', 'current_room']
     search_fields = ['user']
-    raw_id_fields = ['user__username','current_room__name']
+    raw_id_fields = ['user','current_room']
     readonly_fields = ['last_activity']
     
     fieldsets = [

@@ -6,6 +6,7 @@ from .serializers import ConversationSerializer, UserSerializer
 from .models import *
 from django.contrib.auth import get_user_model
 from rest_framework.response import Response
+from rest_framework.decorators import permission_classes
 # Create your views here.
 
 user = get_user_model
@@ -61,7 +62,7 @@ class UserViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action == 'create':
             permission_classes = [permissions.AllowAny]
-        elif self.actions in ['update', 'destroy', 'partial_update']:
+        elif self.action in ['update', 'destroy', 'partial_update']:
             permission_classes = [permissions.IsAuthenticated]
         else:
             permission_classes = [permissions.IsAuthenticated]
@@ -77,14 +78,14 @@ class UserViewSet(viewsets.ModelViewSet):
             return user
         return super().get_object() #this tells DRF that for any action like create and list, it could get any user according to the pk.
     
-    @action(detail=False, method=['get'])
+    @action(detail=False, methods=['get'])
     def me(self, request):
         """Get the user profile"""
         serializer = self.get_serializer(request.user)
         return Response(serializer.data)
     
     #change password
-    @action(detail=False, method=['post'])
+    @action(detail=False, methods=['post'])
     def changepassword(self, request):
         """a view funtion to changepassword"""
         new_password = request.data.get('new_password')
@@ -116,7 +117,6 @@ class UserViewSet(viewsets.ModelViewSet):
     
     #search for users
     @action(detail=False, methods=['get'], url_path='search')
-    @permission_classes[permissions.IsAuthenticated]
     def search_users(self, request):
         """a function that searches for users"""
         query = request.query_params.get('query', '') #tries to get the parameter of the request called query

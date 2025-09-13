@@ -132,7 +132,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
                          'count': counted_notifications}, status=status.HTTP_200_OK)
     
     @action(detail=False, methods=['get'])    
-    def list(self, request, *args, **kwargs):
+    def list_notifications(self, request, *args, **kwargs):
         """list all notifications"""
         notifications = self.get_queryset()    
         #filter by notification types

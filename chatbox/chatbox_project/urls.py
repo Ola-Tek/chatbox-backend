@@ -20,10 +20,7 @@ from django.urls import path, include
 urlpatterns = [
     path("admin/", admin.site.urls),
     
-    #authentication urls
-    path('auth/', include('users_app.authentication')),
-    
-    #for users_app
+    #for users_app and authentication url
     path('api/users', include('users_app.urls')),
     
     #for notifications

@@ -36,7 +36,7 @@ class CustomAdminNotification(admin.ModelAdmin):
             'fields': ['is_read', 'is_sent']
         }),
         ('Time Stamp', {
-            'fields': ['created_at', 'updated_at'],
+            'fields': ['created_at'],
             'classes': ['collapse']
         }),
     ]
@@ -44,9 +44,9 @@ class CustomAdminNotification(admin.ModelAdmin):
 @admin.register(NotificationSettings)
 class CustomAdminNotificationSettings(admin.ModelAdmin):
     """The notification settings for admin interface"""
-    list_display = ['recipient', 'sender', 'created_at', 'title', 'notification_type']
-    list_filter = ['notification_type', 'is_read', 'created_at', 'is_sent']
-    search_fields = ['title', 'message', 'recipient__username']
+    list_display = ['user', 'created_at']
+    list_filter = ['created_at', 'enable_email_notifications']
+    search_fields = ['message', 'user']
     readonly_fields = ['created_at', 'updated_at']
     
     fieldsets = [

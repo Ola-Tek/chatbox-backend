@@ -85,7 +85,7 @@ class UserOnlinePresenceSerializer(serializers.Serializer):
     avatar = serializers.ImageField(source='user.avatar')
     current_room = serializers.CharField(allow_null=True)
     is_online = serializers.BooleanField()
-    last_seen = serializers.DateTimeFiel()
+    last_seen = serializers.DateTimeField()
     
 
 class ConversationOnlineUserSerializer(serializers.Serializer):
