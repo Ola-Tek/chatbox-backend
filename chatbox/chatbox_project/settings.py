@@ -83,7 +83,7 @@ MIDDLEWARE = [
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
 
-ROOT_URLCONF = "chatbox.urls"
+ROOT_URLCONF = "chatbox_project.urls"
 
 TEMPLATES = [
     {
@@ -101,7 +101,7 @@ TEMPLATES = [
     },
 ]
 
-WSGI_APPLICATION = "chatbox.wsgi.application"
+WSGI_APPLICATION = "chatbox_project.wsgi.application"
 
 
 # Database
