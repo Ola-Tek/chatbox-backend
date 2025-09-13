@@ -13,7 +13,7 @@ user = get_user_model
 class ConversationViewSet(viewsets.ModelViewSet):
     """using a viewset operation to build a CRUD operation for a conversation"""
     serializer_class = ConversationSerializer #tells django how to convert responses or post request to json format
-    permission_classes = [permissions.isAuthenticated] #sets permission to tell django that only logged in user can access this view function
+    permission_classes = [permissions.IsAuthenticated] #sets permission to tell django that only logged in user can access this view function
     
     #get_queryset is also an inbuilt hook for drf that tends to get or retrieve
     def get_queryset(self):
