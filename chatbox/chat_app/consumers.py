@@ -456,7 +456,7 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
             }))
         
     @database_sync_to_async
-    async def set_user_online(self):
+    def set_user_online(self):
         """set the user to be online"""
         #THOUGHT PROCESS -
         #1. we have to update or create the online user to be  online using its flag
@@ -468,7 +468,7 @@ class OnlineStatusConsumer(AsyncWebsocketConsumer):
         )
         
     @database_sync_to_async
-    async def set_user_offline(self):
+    def set_user_offline(self):
         """removes the user from the online user table"""
         self.user.is_online = False
         self.user.save()
