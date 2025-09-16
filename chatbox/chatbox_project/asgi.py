@@ -13,14 +13,14 @@ django_asgi_app = get_asgi_application()
 #import websocket routing directly to avid premature model loading
 from chat_app.routing import websocket_urlpatterns
 
-application = AllowedHostsOriginValidator(
-    ProtocolTypeRouter({
+application = ProtocolTypeRouter({
         'http' : django_asgi_app,
-        'websocket' : AuthMiddlewareStack(
+        'websocket' : AllowedHostsOriginValidator(
+            AuthMiddlewareStack(
             URLRouter(
                 websocket_urlpatterns
             )
         ),
+        )
     })
-)
 
