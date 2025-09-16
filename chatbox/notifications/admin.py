@@ -5,10 +5,10 @@ from .models import *
 @admin.register(Notification)
 class CustomAdminNotification(admin.ModelAdmin):
     """admin model for storing notification"""
-    list_display = ['recipient', 'sender', 'notification_type', 'created_at', 'updated_at', 'title', 'notification_count']
+    list_display = ['recipient', 'sender', 'notification_type', 'created_at', 'title', 'notification_count']
     list_filter = ['is_read', 'notification_type', 'is_sent', 'read_at']
     search_fields = ['title', 'notification_type']
-    readonly_fields = ['created_at', 'updated_at']
+    readonly_fields = ['created_at']
     
     #knowing how many notifications you have
     def notification_count(self, obj):
